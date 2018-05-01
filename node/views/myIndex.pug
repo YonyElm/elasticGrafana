@@ -1,0 +1,15 @@
+extends layout
+
+block content
+    h1 #{title}
+    p Welcome to #{title}
+    a(type='button' href='//www.google.com') Google
+    br
+    form(action="csvFetch" method="post" enctype="multipart/form-data")
+        |   Input CSV file:
+        br
+        input(type='file', name='csvPath')
+        br
+        //input(type='input', name='name', value='yourName')
+        //br
+        input(type='submit', value='Upload')
