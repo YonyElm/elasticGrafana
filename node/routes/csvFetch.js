@@ -1,8 +1,9 @@
 const express = require('express');
 const csvParser=require('csvtojson');
-var Multer = require('multer');
-var fs = require('fs');
-var elasticDB = require('elasticsearch');
+const Multer = require('multer');
+const fs = require('fs');
+const elasticDB = require('elasticsearch');
+const sleep = require('system-sleep')
 
 
 var router = express.Router();
@@ -82,6 +83,7 @@ function parseCSVFile(sourceFilePath, handleError, done){
 		handleError(error)
 	});
 
+	
 	parser.on("end", function(){
 		// Delete file when processing done
 		fs.unlinkSync(sourceFilePath);
@@ -92,16 +94,17 @@ function parseCSVFile(sourceFilePath, handleError, done){
 //-----------------------------------------------
 
 const ElasticMapping = {
-	tick:{
+	myType:{
 		properties:{
 			Date    : {"type": "date", "format": "d-MMM-yy"}
 		}
 	}
 };
 
+// Reading JSON file and writing it into elastic DB as a bulk
 function addingToElastic(sourceFilePath, done){
 	var elasticClient = new elasticDB.Client({
-		host: 'localhost:4000',
+		host: 'localhost:9200',
 		log: 'trace'
 	});
 
@@ -114,20 +117,28 @@ function addingToElastic(sourceFilePath, done){
 			console.trace('ElasticSearch cluster is down!');
 		} else {
 
-			// Create empty ElasticSearch index, and change mapping.
-			elasticClient.create({index:"aapls", type:"tick", id: 0, body:{}});
-			elasticClient.indices.putMapping({index:"aapls", type:"tick", body:ElasticMapping});
+			var myIndex = "my_index" + Date.now();
+
+			createIndex(myIndex, elasticClient, function(myIndex, elasticClient){
+				elasticClient.indices.putMapping({index: myIndex, type:"myType", body:ElasticMapping})});
 
 			// Add records to the index
 			fs.readFile(sourceFilePath, 'utf8', function (err, data) {
 				if (err) throw err; // we'll not consider error handling for now
-				elasticClient.bulk({index:"aapls", type:"tick", body:data});
+				elasticClient.bulk({index: myIndex, type:"myType", body:data});
+				//Delete temporary file after reading it.
+				fs.unlinkSync(sourceFilePath);
+				done('All is well\n' + sourceFilePath);
 			});
-			//Delete temporary file.
-			fs.unlinkSync(sourceFilePath);
-			done('All is well' + sourceFilePath);
 		}
 	});
+}
+
+// Making sure that Index will be created before mapping configuration.
+function createIndex(indexName, elasticClient, callback) {
+	// Create empty ElasticSearch index, and change mapping.
+	elasticClient.create({index: indexName, type:"myType", id: 0, body:{}});
+	callback(indexName, elasticClient);
 }
 
 module.exports = router;

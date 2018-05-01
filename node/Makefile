@@ -11,11 +11,13 @@ init:
 	# Generates framework basic tools
 	$ sudo npm install express-generator -g
 	
-# Run inside develop environment to create it
-basic_env:
-
+#
+express:
 	# create an app with pug templates
 	$ express --view=pug .
+	
+# Run inside develop environment to create it
+dependencies:
 
 	# Jade is deprecated pug is the new template module
 	$ npm install pug
