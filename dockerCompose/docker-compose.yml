@@ -1,0 +1,34 @@
+# Use Docker-Compose V3
+version: '3'
+services:
+    nodeApp:
+        # Set static IP to container from specific Docker-based network
+        networks: 
+            myNet:
+                ipv4_address: "172.5.0.10"
+        image: "node_app"
+        # Prevent from closing immediately after open (Runs Bash process to prevent closing)
+        tty: "true"
+        # Expose Localhost:8000 => nodeApp:3500
+        ports:
+            - "8000:3500"
+    elastic:
+        networks:
+            myNet:
+                ipv4_address: "172.5.0.20"
+        image: "elasticsearch"
+    grafana:
+        networks:
+            myNet:
+                ipv4_address: "172.5.0.30"
+        image: "grafana/grafana"
+        ports:
+            - "8001:3000"
+# Set Dcocker Network "dockercompose_myNet"
+networks:
+    myNet:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.5.0.0/16
