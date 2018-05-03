@@ -6,7 +6,7 @@ services:
         networks: 
             myNet:
                 ipv4_address: "172.5.0.10"
-        image: "node_app"
+        image: "techye/node_app:v0.1"
         # Prevent from closing immediately after open (Runs Bash process to prevent closing)
         tty: "true"
         # Expose Localhost:8000 => nodeApp:3500
@@ -16,6 +16,12 @@ services:
         networks:
             myNet:
                 ipv4_address: "172.5.0.20"
+        # Manage resources restrictions
+        deploy:
+            resources:
+                limits:
+                    #cpus: '0.7' # Use up to 70% of CPU
+                    memory: 512M
         image: "elasticsearch"
     grafana:
         networks:
