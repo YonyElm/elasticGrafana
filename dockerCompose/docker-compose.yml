@@ -3,7 +3,7 @@ version: '3'
 services:
     nodeApp:
         container_name: my-node-app
-        image: "techye/node_app:v0.1"
+        image: "techye/node_app:latest"
         # Prevent from closing immediately after open (Runs Bash process to prevent closing)
         tty: "true"
         # Node application listens to variable to send requests to ElasticDB
