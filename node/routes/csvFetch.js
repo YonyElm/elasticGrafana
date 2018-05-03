@@ -102,7 +102,7 @@ const ElasticMapping = {
 // Reading JSON file and writing it into elastic DB as a bulk
 function addingToElastic(sourceFilePath, handleError, done){
 	var elasticClient = new elasticDB.Client({
-		host: '172.5.0.20:9200',
+		host: process.env.ELASTIC_DB_HOST,
 		log: 'trace'
 	});
 
@@ -111,7 +111,7 @@ function addingToElastic(sourceFilePath, handleError, done){
 		// ping usually has a 3000ms timeout
 		requestTimeout: 1000
 	}, function (error) {
-		if (error) {handleError(new Error('ElasticSearch cluster is down!'));}
+		if (error) {handleError(new Error('ElasticSearch cluster is down @' + process.env.ELASTIC_DB_HOST));}
 		else {
 
 			var myIndex = "my_index" + Date.now();
