@@ -14,6 +14,7 @@ RUN git init .
 RUN git remote add origin https://github.com/techyE/elasticGrafana.git
 RUN git fetch
 RUN git checkout master
+RUN git pull
 
 # Run required installations before launch
 RUN npm install --prefix node
@@ -24,4 +25,5 @@ EXPOSE 3500
 # Create an environment variable inside docker
 ENV ELASTIC_DB_HOST=localhost:9200
 
+# Execution command on boot
 CMD npm start --prefix node
