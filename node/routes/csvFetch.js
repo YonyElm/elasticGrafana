@@ -1,8 +1,8 @@
 const express = require('express');
 const csvParser=require('csvtojson');
-var Multer = require('multer');
-var fs = require('fs');
-var elasticDB = require('elasticsearch');
+const Multer = require('multer');
+const fs = require('fs');
+const elasticDB = require('elasticsearch');
 
 
 var router = express.Router();
@@ -50,6 +50,7 @@ router.post('/', Multer(multerConfig).single('csvPath'), function (req, res, nex
 
 	function onError(error){
 		console.log(error);
+		res.render('error', { error: error });
 	}
 
 	function done(parseResponse){
@@ -71,9 +72,7 @@ function parseCSVFile(sourceFilePath, handleError, done){
 	parser.on('json', function(jsonObj) {
 		elasticMetaString = '{"index":{"_id":"'+numOfRecs+'"}}'+"\n";
 		fs.appendFile(tmpFilePath, elasticMetaString + JSON.stringify(jsonObj)+"\n", function (error) {
-			if (error) {
-				handleError(error)
-			}
+			if (error) {handleError(new Error("Couldn't JSON file"));}
 		});
 		numOfRecs = numOfRecs + 1
 	});
@@ -82,26 +81,28 @@ function parseCSVFile(sourceFilePath, handleError, done){
 		handleError(error)
 	});
 
+	
 	parser.on("end", function(){
 		// Delete file when processing done
 		fs.unlinkSync(sourceFilePath);
-		addingToElastic(tmpFilePath, done);
+		addingToElastic(tmpFilePath, handleError, done);
 	});
 }
 
 //-----------------------------------------------
 
 const ElasticMapping = {
-	tick:{
+	myType:{
 		properties:{
 			Date    : {"type": "date", "format": "d-MMM-yy"}
 		}
 	}
 };
 
-function addingToElastic(sourceFilePath, done){
+// Reading JSON file and writing it into elastic DB as a bulk
+function addingToElastic(sourceFilePath, handleError, done){
 	var elasticClient = new elasticDB.Client({
-		host: 'localhost:4000',
+		host: process.env.ELASTIC_DB_HOST,
 		log: 'trace'
 	});
 
@@ -110,22 +111,39 @@ function addingToElastic(sourceFilePath, done){
 		// ping usually has a 3000ms timeout
 		requestTimeout: 1000
 	}, function (error) {
-		if (error) {
-			console.trace('ElasticSearch cluster is down!');
-		} else {
+		if (error) {handleError(new Error('ElasticSearch cluster is down @' + process.env.ELASTIC_DB_HOST));}
+		else {
 
-			// Create empty ElasticSearch index, and change mapping.
-			elasticClient.create({index:"aapls", type:"tick", id: 0, body:{}});
-			elasticClient.indices.putMapping({index:"aapls", type:"tick", body:ElasticMapping});
+			var myIndex = "my_index" + Date.now();
 
-			// Add records to the index
-			fs.readFile(sourceFilePath, 'utf8', function (err, data) {
-				if (err) throw err; // we'll not consider error handling for now
-				elasticClient.bulk({index:"aapls", type:"tick", body:data});
+			// Creating Index in DB
+			elasticClient.create({index: myIndex, type:"myType", id: 0, body:{}} , function(error){
+				if (error){handleError(new Error('Index creation faild'));}
+				else {
+					// Configuring DB mapping for Grafana to link with @timeStamp
+					elasticClient.indices.putMapping({index: myIndex, type:"myType", body:ElasticMapping}  , function(error){
+						if (error){handleError(new Error('Mapping configuration faild'));}
+						else {
+							// Read JSON bulk file
+							fs.readFile(sourceFilePath, 'utf8', function (error, data) {
+								if (error) {handleError(new Error('Reading JSON file faild'));}
+								else{
+									// Adding bulk to DB
+									elasticClient.bulk({index: myIndex, type:"myType", body:data}  , function(error){
+										if (error){handleError(new Error('Mapping configuration faild'));}
+										else {
+											//Delete temporary file after reading it.
+											fs.unlinkSync(sourceFilePath);
+											done('All is well\n' + sourceFilePath);
+										}
+									});
+								}
+							});
+						}
+					});
+				}
 			});
-			//Delete temporary file.
-			fs.unlinkSync(sourceFilePath);
-			done('All is well' + sourceFilePath);
+
 		}
 	});
 }
