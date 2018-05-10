@@ -3,7 +3,7 @@ version: '3'
 services:
     nodeApp:
         container_name: my-node-app
-        image: my_app #"techye/node_app:latest"
+        image: "techye/node_app:latest"
         # Prevent from closing immediately after open (Runs Bash process to prevent closing)
         tty: "true"
         # Expose Localhost:8000 => nodeApp:3500
