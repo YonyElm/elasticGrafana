@@ -22,8 +22,5 @@ RUN npm install --prefix node
 # Indicates that the app listens on port 3500 (attribute "run -P" will publish this port automatically)
 EXPOSE 3500
 
-# Create an environment variable inside docker
-ENV ELASTIC_DB_HOST=localhost:9200
-
 # Execution command on boot
 CMD npm start --prefix node

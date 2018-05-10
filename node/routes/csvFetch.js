@@ -102,7 +102,7 @@ const ElasticMapping = {
 // Reading JSON file and writing it into elastic DB as a bulk
 function addingToElastic(sourceFilePath, handleError, done){
 	var elasticClient = new elasticDB.Client({
-		host: process.env.ELASTIC_DB_HOST,
+		host: "elastic:9200",
 		log: 'trace'
 	});
 
