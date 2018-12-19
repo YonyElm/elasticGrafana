@@ -1,14 +1,14 @@
 # Use Docker-Compose V3
 version: '3'
 services:
-    nodeApp:
-        container_name: my-node-app
-        image: "techye/node_app:latest"
+    node_app:
+        container_name: node_app
+        image: techye/node_app:latest
         # Prevent from closing immediately after open (Runs Bash process to prevent closing)
         tty: "true"
         # Node application listens to variable to send requests to ElasticDB
         environment:
-            - "ELASTIC_DB_HOST=172.5.0.20:9200"
+            - "ELASTIC_DB_HOST=http://elastic_db:9200"
         # Set static IP to container from specific Docker-based network
         networks: 
             myNet:
@@ -16,20 +16,24 @@ services:
         # Expose Localhost:8000 => nodeApp:3500
         ports:
             - "8000:3500"
-    elastic:
-        container_name: my-elastic-db
-        image: "elasticsearch"
+    elastic_db:
+        container_name: elastic_db
+        image: elastic/elasticsearch:6.5.3
         # Manage restriction inside the container
         environment:
             - cluster.name=docker-cluster
             - bootstrap.memory_lock=true
-            - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+            - "ES_JAVA_OPTS=-Xmx2048m -Xms2048m"
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
         networks:
             myNet:
                 ipv4_address: "172.5.0.20"
     grafana:
-        container_name: my-grafana
-        image: "grafana/grafana"
+        container_name: grafana
+        image: grafana/grafana
         networks:
             myNet:
                 ipv4_address: "172.5.0.30"
