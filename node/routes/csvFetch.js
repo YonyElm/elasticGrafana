@@ -55,7 +55,7 @@ router.post('/', Multer(multerConfig).single('csvPath'), function (req, res, nex
 
 	function done(parseResponse){
 		console.log(parseResponse);
-		res.redirect('/');
+		res.redirect('/?text=Great, your file has been uploaded!');
 	}
 
 	// Function that passes function on
