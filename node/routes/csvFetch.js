@@ -94,7 +94,12 @@ function parseCSVFile(sourceFilePath, handleError, done){
 const ElasticMapping = {
 	myType:{
 		properties:{
-			Date    : {"type": "date", "format": "d-MMM-yy"}
+			Date    : {type : "date", format: "d-MMM-yy"},
+			Open	: {type : "float"},
+			High	: {type : "float"},
+			Low		: {type : "float"},
+			Close	: {type : "float"},
+			Volume	: {type : "long"}
 		}
 	}
 };
@@ -114,10 +119,14 @@ function addingToElastic(sourceFilePath, handleError, done){
 		if (error) {handleError(new Error('ElasticSearch cluster is down @' + process.env.ELASTIC_DB_HOST));}
 		else {
 
-			var myIndex = "my_index" + Date.now();
+			var myIndex = "my_index-" + Date.now();
 
 			// Creating Index in DB
-			elasticClient.create({index: myIndex, type:"myType", id: 0, body:{}} , function(error){
+			elasticClient.create({	index: myIndex, 
+									type: "myType", 
+									id: 0, 
+									body:{}
+								} , function(error) {
 				if (error){handleError(new Error('Index creation faild'));}
 				else {
 					// Configuring DB mapping for Grafana to link with @timeStamp
